@@ -1,4 +1,12 @@
 apply plugin: 'com.android.application'
+apply plugin: 'build-announcements'
+
+//task info {
+//    doLast {
+//        announce.announce("Installed Sunshine2", 'Completed!')
+//        println gradle.gradleVersion
+//    }
+//}
 
 android {
     compileSdkVersion 23
@@ -23,8 +31,12 @@ android {
     }
 }
 
+ext {
+    supportLibVersion = '23.3.0'
+}
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:23.2.1'
+    compile "com.android.support:appcompat-v7:${supportLibVersion}"
     compile 'com.jakewharton.timber:timber:4.1.2'
 }
