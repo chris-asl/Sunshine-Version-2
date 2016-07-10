@@ -34,8 +34,12 @@ import java.util.Locale;
 import timber.log.Timber;
 
 public class ForecastFragment extends Fragment {
+    // Fields --------------------------------------------------------------------------------------
     private final String LOG_TAG = ForecastFragment.class.getSimpleName();
+    private ArrayAdapter<String> mForecastAdapter;
 
+
+    // Fragment methods ----------------------------------------------------------------------------
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,9 +77,9 @@ public class ForecastFragment extends Fragment {
                 "Sat 6/28 - TRAPPED IN WEATHERSTATION - 23/18",
                 "Sun 6/29 - Sunny - 20/7"
         };
-        List weekForecast = new ArrayList<>(Arrays.asList(data));
+        List<String> weekForecast = new ArrayList<>(Arrays.asList(data));
         // Let's create and ArrayAdapter and bind it to the ListView
-        ArrayAdapter<String> mForecastAdapter = new ArrayAdapter<>(
+        mForecastAdapter = new ArrayAdapter<>(
                 getActivity(),
                 R.layout.list_item_forecast,
                 R.id.list_item_forecast_textview,
@@ -134,7 +138,6 @@ public class ForecastFragment extends Fragment {
                         .appendQueryParameter(APPID, BuildConfig.OPEN_WEATHER_MAP_API_KEY)
                         .build();
                 URL url = new URL(builtUri.toString());
-                Timber.v("Built URI %s", builtUri.toString());
 
                 // Create a connection to OpenWeatherMap and connect
                 urlConnection = (HttpURLConnection) url.openConnection();
@@ -155,15 +158,11 @@ public class ForecastFragment extends Fragment {
                 if (buffer.length() == 0)
                     // Stream was empty. No point in parsing.
                     return null;
-                forecastJsonStr = buffer.toString();
 
-                Timber.v("Forecast JSON String: %s", forecastJsonStr);
+                forecastJsonStr = buffer.toString();
             } catch (IOException e) {
                 Timber.e("Forecast fragment error: %s", e.toString());
                 return null;
-//            } catch (JSONException e) {
-//                Timber.e("Could not parse JSON input string: %s", e.getMessage());
-//                return null;
             } finally {
                 if (urlConnection != null)
                     urlConnection.disconnect();
@@ -182,6 +181,14 @@ public class ForecastFragment extends Fragment {
                 Timber.e("Failure parsing forecastJSONString: %s", e.getMessage());
             }
             return null;
+        }
+
+        @Override
+        protected void onPostExecute(String[] weatherStrs) {
+            if (weatherStrs != null) {
+                mForecastAdapter.clear();
+                mForecastAdapter.addAll(weatherStrs);
+            }
         }
     }
 
@@ -212,7 +219,7 @@ public class ForecastFragment extends Fragment {
         final String OWM_MAIN = "main";
         final String OWM_MAX = "temp_max";
         final String OWM_MIN = "temp_min";
-        final String OWM_DESCRIPTION = "description";
+        final String OWM_MAIN_DESCRIPTION = "main";
 
         JSONObject forecastJson = new JSONObject(forecastJsonStr);
         JSONArray weatherArray = forecastJson.getJSONArray(OWM_LIST);
@@ -246,8 +253,7 @@ public class ForecastFragment extends Fragment {
             // Description is in a child array called "weather", which is 1 element long.
             description = dayForecast
                     .getJSONArray(OWM_WEATHER).getJSONObject(0)
-                    .getString(OWM_DESCRIPTION);
-            description = description.substring(0,1).toUpperCase() + description.substring(1);
+                    .getString(OWM_MAIN_DESCRIPTION);
 
             // Temperatures are in a child object called "main".
             JSONObject temperaturesObject = dayForecast.getJSONObject(OWM_MAIN);
@@ -257,10 +263,6 @@ public class ForecastFragment extends Fragment {
             resultStrs[i] = day + " - " + description + " - " + highAndLow;
         }
 
-        Timber.v("Length of resultStrs: %d", resultStrs.length);
-        for (String s: resultStrs) {
-            Timber.v("Forecast entry: %s", s);
-        }
         return resultStrs;
     }
 }
