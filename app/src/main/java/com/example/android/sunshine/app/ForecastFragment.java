@@ -14,15 +14,22 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Locale;
 
 import timber.log.Timber;
 
@@ -83,12 +90,14 @@ public class ForecastFragment extends Fragment {
         return rootView;
     }
 
-
-    public class FetchWeatherTask extends AsyncTask<String, Void, Void> {
+    // AsyncTask for fetching the JSON weather data and formatting them to String[] ----------------
+    public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
+        // Fields ----------------------------------------------------------------------------------
         private final String LOG_TAG = FetchWeatherTask.class.getSimpleName();
 
+        // AsyncTask Methods -----------------------------------------------------------------------
         @Override
-        protected Void doInBackground(String... params) {
+        protected String[] doInBackground(String... params) {
             // Check input
             String zipcode = null;
             if (params.length == 0) {
@@ -152,6 +161,9 @@ public class ForecastFragment extends Fragment {
             } catch (IOException e) {
                 Timber.e("Forecast fragment error: %s", e.toString());
                 return null;
+//            } catch (JSONException e) {
+//                Timber.e("Could not parse JSON input string: %s", e.getMessage());
+//                return null;
             } finally {
                 if (urlConnection != null)
                     urlConnection.disconnect();
@@ -164,8 +176,91 @@ public class ForecastFragment extends Fragment {
                     }
                 }
             }
+            try {
+                return getWeatherDataFromJson(forecastJsonStr, numDays);
+            } catch (JSONException e) {
+                Timber.e("Failure parsing forecastJSONString: %s", e.getMessage());
+            }
             return null;
         }
     }
 
+    // Helpers -------------------------------------------------------------------------------------
+    /**
+     * Prepare the weather high/lows for presentation.
+     */
+    private String formatHighLows(double high, double low) {
+        // For representation @ UI, we assume that the user doesn't care about tenths of a degree.
+        long roundedHigh = Math.round(high);
+        long roundedLow = Math.round(low);
+
+        return roundedHigh + " / " + roundedLow;
+    }
+
+    /**
+     * Take the String representing the complete forecast in JSON Format and
+     * pull out the data we need to construct the Strings needed for the wireframes.
+     *
+     * Fortunately parsing is easy:  constructor takes the JSON string and converts it
+     * into an Object hierarchy for us.
+     */
+    private String[] getWeatherDataFromJson(String forecastJsonStr, int numDays)
+        throws JSONException {
+        // These are the names of the JSON objects that need to be extracted.
+        final String OWM_LIST = "list";
+        final String OWM_WEATHER = "weather";
+        final String OWM_MAIN = "main";
+        final String OWM_MAX = "temp_max";
+        final String OWM_MIN = "temp_min";
+        final String OWM_DESCRIPTION = "description";
+
+        JSONObject forecastJson = new JSONObject(forecastJsonStr);
+        JSONArray weatherArray = forecastJson.getJSONArray(OWM_LIST);
+
+        // OWM returns daily forecasts based upon the local time of the city that is being
+        // asked for, which means that we need to know the GMT offset to translate this data
+        // properly.
+        // Since this data is also sent in-order and the first day is always the
+        // current day, we're going to take advantage of that to get a nice
+        // normalized UTC date for all of our weather.
+
+        String[] resultStrs = new String[numDays];
+        for (int i = 0; i < weatherArray.length(); i++) {
+            // For now, using the format "Day, description, hi/low"
+            String day;
+            String description;
+            String highAndLow;
+
+            JSONObject dayForecast = weatherArray.getJSONObject(i);
+
+            // We're going to ignore the actual time data, and exploit the fact that the 1st day
+            // that we receive is the current one.
+            GregorianCalendar calendar = new GregorianCalendar();
+            // Advance i days the current date.
+            calendar.add(GregorianCalendar.DATE, i);
+            // Get that date, and format it appropriately
+            SimpleDateFormat shortenedDateFormat =
+                    new SimpleDateFormat("EEE, MMM dd", Locale.getDefault());
+            day = shortenedDateFormat.format(calendar.getTime());
+
+            // Description is in a child array called "weather", which is 1 element long.
+            description = dayForecast
+                    .getJSONArray(OWM_WEATHER).getJSONObject(0)
+                    .getString(OWM_DESCRIPTION);
+            description = description.substring(0,1).toUpperCase() + description.substring(1);
+
+            // Temperatures are in a child object called "main".
+            JSONObject temperaturesObject = dayForecast.getJSONObject(OWM_MAIN);
+            highAndLow = formatHighLows(
+                    temperaturesObject.getDouble(OWM_MAX), temperaturesObject.getDouble(OWM_MIN));
+
+            resultStrs[i] = day + " - " + description + " - " + highAndLow;
+        }
+
+        Timber.v("Length of resultStrs: %d", resultStrs.length);
+        for (String s: resultStrs) {
+            Timber.v("Forecast entry: %s", s);
+        }
+        return resultStrs;
+    }
 }
