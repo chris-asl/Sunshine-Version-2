@@ -8,13 +8,29 @@
     <string name="title_activity_detail">Details</string>
     <string name="title_activity_settings">Settings</string>
 
+    <!-- ============================== Settings =============================================== -->
     <!-- Label for the location preference [CHAR LIMIT=30] -->
     <string name="pref_location_label">Location</string>
-
     <!-- Key name for storing location in SharedPreferences [CHAR LIMIT=NONE] -->
     <string name="pref_location_key" translatable="false">location</string>
-
     <!-- Default postal code for location preference [CHAR LIMIT=NONE] -->
     <string name="pref_location_default" translatable="false">18546</string>
+
+    <!-- Label for the temperature units -->
+    <string name="pref_temperature_units_label">Temperature Units</string>
+    <!-- Key name for storing temperature units in SharedPreferences -->
+    <string name="pref_temperature_units_key" translatable="false">temperature_units</string>
+    <!-- Dialog Title for temperature units selection dialog -->
+    <string name="pref_temperature_units_dialog_title">Select your temperature units</string>
+    <!-- Default Value for temperature units -->
+    <string name="pref_temperature_units_default">@string/pref_temperature_units_value_metric</string>
+    <!-- Temperature units options -->
+    <string name="pref_temperature_units_label_metric">Metric</string>
+    <string name="pref_temperature_units_label_imperial">Imperial</string>
+    <!-- Temperature units values -->
+    <string name="pref_temperature_units_value_metric">metric</string>
+    <string name="pref_temperature_units_value_imperial">imperial</string>
+
+
 
 </resources>

@@ -213,11 +213,28 @@ public class ForecastFragment extends Fragment {
      * Prepare the weather high/lows for presentation.
      */
     private String formatHighLows(double high, double low) {
-        // For representation @ UI, we assume that the user doesn't care about tenths of a degree.
-        long roundedHigh = Math.round(high);
-        long roundedLow = Math.round(low);
+        // Check for user-preferred temperature units.
+        String temperatureUnits = PreferenceManager.getDefaultSharedPreferences(getActivity())
+                .getString(getString(R.string.pref_temperature_units_key),
+                        getString(R.string.pref_temperature_units_default));
+
+        long roundedHigh, roundedLow;
+        // We know that OpenWeatherAPI sends to values to metric units.
+        if (!temperatureUnits.equals(
+                getResources().getStringArray(R.array.pref_temperature_units_values)[0])) {
+                roundedHigh = Math.round(celciusToFahrenheit(high));
+                roundedLow = Math.round(celciusToFahrenheit(low));
+        }
+        else {
+            roundedHigh = Math.round(high);
+            roundedLow = Math.round(low);
+        }
 
         return roundedHigh + " / " + roundedLow;
+    }
+
+    private double celciusToFahrenheit(double celcius) {
+        return 1.8 * celcius + 32;
     }
 
     /**

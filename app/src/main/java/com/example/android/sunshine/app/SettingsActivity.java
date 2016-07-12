@@ -60,6 +60,8 @@ public class SettingsActivity extends PreferenceActivity
             // updated when the preference changes.
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_location_key)),
                     (Preference.OnPreferenceChangeListener) getActivity());
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_temperature_units_key)),
+                    (Preference.OnPreferenceChangeListener) getActivity());
         }
 
         // Helpers ---------------------------------------------------------------------------------
