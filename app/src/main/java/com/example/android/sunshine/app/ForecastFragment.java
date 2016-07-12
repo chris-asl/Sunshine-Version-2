@@ -31,7 +31,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
@@ -53,6 +52,12 @@ public class ForecastFragment extends Fragment {
     }
 
     @Override
+    public void onStart() {
+        updateWeather();
+        super.onStart();
+    }
+
+    @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.forecastfragment, menu);
     }
@@ -62,17 +67,7 @@ public class ForecastFragment extends Fragment {
         // Handle action bar item clicks here.
         int id = item.getItemId();
         if (id == R.id.action_refresh) {
-            FetchWeatherTask weatherTask = new FetchWeatherTask();
-
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
-                    getActivity().getSharedPreferences(
-                            getString(R.string.pref_location_key), Context.MODE_PRIVATE);
-
-            String defaultLocation = getResources().getString(R.string.pref_location_default);
-            String location = prefs.getString(getString(R.string.pref_location_key), defaultLocation);
-            Timber.v("About to fetch weather for location: %s", location);
-
-            weatherTask.execute(location);
+            updateWeather();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -81,17 +76,7 @@ public class ForecastFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Create some dummy data for the ListView.  Here's a sample weekly forecast
-        String[] data = {
-                "Mon 6/23 - Sunny - 31/17",
-                "Tue 6/24 - Foggy - 21/8",
-                "Wed 6/25 - Cloudy - 22/17",
-                "Thurs 6/26 - Rainy - 18/11",
-                "Fri 6/27 - Foggy - 21/10",
-                "Sat 6/28 - TRAPPED IN WEATHERSTATION - 23/18",
-                "Sun 6/29 - Sunny - 20/7"
-        };
-        List<String> weekForecast = new ArrayList<>(Arrays.asList(data));
+        List<String> weekForecast = new ArrayList<>();
         // Let's create and ArrayAdapter and bind it to the ListView
         mForecastAdapter = new ArrayAdapter<>(
                 getActivity(),
@@ -114,6 +99,20 @@ public class ForecastFragment extends Fragment {
         });
 
         return rootView;
+    }
+
+    // Helpers -------------------------------------------------------------------------------------
+    private void updateWeather() {
+        FetchWeatherTask weatherTask = new FetchWeatherTask();
+
+        // Getting *Default*SharedPreferences, and then the value of the pref_location_key.
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        getActivity().getSharedPreferences(
+                getString(R.string.pref_location_key), Context.MODE_PRIVATE);
+        String defaultLocation = getResources().getString(R.string.pref_location_default);
+        String location = prefs.getString(getString(R.string.pref_location_key), defaultLocation);
+
+        weatherTask.execute(location);
     }
 
     // AsyncTask for fetching the JSON weather data and formatting them to String[] ----------------
