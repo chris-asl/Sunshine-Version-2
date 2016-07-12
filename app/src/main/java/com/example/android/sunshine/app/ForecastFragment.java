@@ -125,7 +125,6 @@ public class ForecastFragment extends Fragment {
         protected String[] doInBackground(String... params) {
             // Check input
             String location = params[0];
-            Timber.v("NewFetchWeatherTask with location: %s", location);
             // Set up query parameters
             String format = "json";
             String units = "metric";
