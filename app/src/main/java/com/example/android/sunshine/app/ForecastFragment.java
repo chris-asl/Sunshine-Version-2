@@ -1,9 +1,12 @@
 package com.example.android.sunshine.app;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -60,7 +63,16 @@ public class ForecastFragment extends Fragment {
         int id = item.getItemId();
         if (id == R.id.action_refresh) {
             FetchWeatherTask weatherTask = new FetchWeatherTask();
-            weatherTask.execute("18546");
+
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+                    getActivity().getSharedPreferences(
+                            getString(R.string.pref_location_key), Context.MODE_PRIVATE);
+
+            String defaultLocation = getResources().getString(R.string.pref_location_default);
+            String location = prefs.getString(getString(R.string.pref_location_key), defaultLocation);
+            Timber.v("About to fetch weather for location: %s", location);
+
+            weatherTask.execute(location);
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -113,13 +125,8 @@ public class ForecastFragment extends Fragment {
         @Override
         protected String[] doInBackground(String... params) {
             // Check input
-            String zipcode = null;
-            if (params.length == 0) {
-                // Set default zip code
-                zipcode = "18546";
-            }
-            else
-                zipcode = params[0];
+            String location = params[0];
+            Timber.v("NewFetchWeatherTask with location: %s", location);
             // Set up query parameters
             String format = "json";
             String units = "metric";
@@ -141,7 +148,7 @@ public class ForecastFragment extends Fragment {
                 final String APPID = "APPID";
 
                 Uri builtUri = Uri.parse(FORECAST_BASE_URL).buildUpon()
-                        .appendQueryParameter(QUERY_PARAM, zipcode)
+                        .appendQueryParameter(QUERY_PARAM, location)
                         .appendQueryParameter(FORMAT_PARAM, format)
                         .appendQueryParameter(UNITS_PARAM, units)
                         .appendQueryParameter(DAYS_PARAM, Integer.toString(numDays))

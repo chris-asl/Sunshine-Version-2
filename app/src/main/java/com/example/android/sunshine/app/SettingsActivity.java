@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
+import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 
 /**
@@ -20,29 +21,12 @@ public class SettingsActivity extends PreferenceActivity
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Add 'general' preferences, defined in the XML file
-        // TODO: Add preferences from XML
-
-        // For all preferences, attach an OnPreferenceChangeListener so the UI summary can be
-        // updated when the preference changes.
-        // TODO: Add preferences
-    }
-
-    /**
-     * Attaches a listener so the summary is always updated with the preference value.
-     * Also fires the listener once, to initialize the summary (so it shows up before the value
-     * is changed.)
-     */
-    private void bindPreferenceSummaryToValue(Preference preference) {
-        // Set the listener to watch for value changes.
-        preference.setOnPreferenceChangeListener(this);
-
-        // Trigger the listener immediately with the preference's
-        // current value.
-        onPreferenceChange(preference,
-                PreferenceManager
-                        .getDefaultSharedPreferences(preference.getContext())
-                        .getString(preference.getKey(), ""));
+        if (savedInstanceState == null) {
+            // Display the Settings fragment as the main content.
+            getFragmentManager().beginTransaction()
+                    .replace(android.R.id.content, new SettingsFragment())
+                    .commit();
+        }
     }
 
     @Override
@@ -62,6 +46,39 @@ public class SettingsActivity extends PreferenceActivity
             preference.setSummary(stringValue);
         }
         return true;
+    }
+
+    public static class SettingsFragment extends PreferenceFragment {
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+
+            // Load the preferences from the XML resource
+            addPreferencesFromResource(R.xml.pref_general);
+
+            // For all preferences, attach an OnPreferenceChangeListener so the UI summary can be
+            // updated when the preference changes.
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_location_key)),
+                    (Preference.OnPreferenceChangeListener) getActivity());
+        }
+
+        // Helpers ---------------------------------------------------------------------------------
+        /**
+         * Attaches a listener so the summary is always updated with the preference value.
+         * Also fires the listener once, to initialize the summary (so it shows up before the value
+         * is changed.)
+         */
+        private static void bindPreferenceSummaryToValue(
+                Preference preference, Preference.OnPreferenceChangeListener settingsActivity) {
+            // Set the listener to watch for value changes.
+            preference.setOnPreferenceChangeListener(settingsActivity);
+
+            // Trigger the listener immediately with the preference's
+            // current value.
+            settingsActivity.onPreferenceChange(preference,
+                    PreferenceManager.getDefaultSharedPreferences(preference.getContext())
+                            .getString(preference.getKey(), ""));
+        }
     }
 
 }
