@@ -31,5 +31,6 @@
     <!-- Temperature units values -->
     <string name="pref_temperature_units_value_metric">metric</string>
     <string name="pref_temperature_units_value_imperial">imperial</string>
+    <string name="share">Share</string>
 
 </resources>
